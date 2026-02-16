@@ -209,7 +209,8 @@ export function ManipulatorOverlay({ step, worldBounds, onUpdatePayload }: Manip
       const current = linearValuesOrIdentity(step.payload);
       const x = clamp(point.x, txMin, txMax);
       const y = clamp(point.y, tyMin, tyMax);
-      commitPayload(mat2ToLinearData([x, current[1], y, current[3]]));
+      // Convert displayed basis (y-up) into stored matrix convention (off-diagonals sign-flipped).
+      commitPayload(mat2ToLinearData([x, current[1], -y, current[3]]));
       return;
     }
 
@@ -217,7 +218,8 @@ export function ManipulatorOverlay({ step, worldBounds, onUpdatePayload }: Manip
       const current = linearValuesOrIdentity(step.payload);
       const x = clamp(point.x, txMin, txMax);
       const y = clamp(point.y, tyMin, tyMax);
-      commitPayload(mat2ToLinearData([current[0], x, current[2], y]));
+      // Convert displayed basis (y-up) into stored matrix convention (off-diagonals sign-flipped).
+      commitPayload(mat2ToLinearData([current[0], -x, current[2], y]));
       return;
     }
 
@@ -272,8 +274,8 @@ export function ManipulatorOverlay({ step, worldBounds, onUpdatePayload }: Manip
 
   const mirrorAngle = linear ? -Math.atan2(linear[1], linear[0]) * 0.5 : Math.PI / 4;
   const scaleFactor = linear ? clamp((linear[0] + linear[3]) * 0.5, 0.1, 10) : 1;
-  const generalFirst = linear ? { x: linear[0], y: linear[2] } : { x: 1, y: 0 };
-  const generalSecond = linear ? { x: linear[1], y: linear[3] } : { x: 0, y: 1 };
+  const generalFirst = linear ? { x: linear[0], y: -linear[2] } : { x: 1, y: 0 };
+  const generalSecond = linear ? { x: -linear[1], y: linear[3] } : { x: 0, y: 1 };
   const shearParams = linear ? deriveShearParams(linear) : { k: 0.35, phi: 0 };
   const shearValue = -shearParams.k;
   const shearFixedAngle = shearParams.phi;

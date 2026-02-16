@@ -5,6 +5,35 @@ import { RightSidebar } from './ui/RightSidebar';
 import { CanvasViewport } from './ui/CanvasViewport';
 import { useEditorStore } from './state/editorStore';
 
+async function createUploadBitmap(file: File): Promise<ImageBitmap> {
+  const imageUrl = URL.createObjectURL(file);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const element = new Image();
+      element.onload = () => resolve(element);
+      element.onerror = () => reject(new Error('Unable to load selected image.'));
+      element.src = imageUrl;
+    });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return createImageBitmap(file);
+    }
+
+    // Keep texture orientation consistent across browsers by explicitly flipping once here.
+    context.translate(0, canvas.height);
+    context.scale(1, -1);
+    context.drawImage(image, 0, 0);
+
+    return createImageBitmap(canvas);
+  } finally {
+    URL.revokeObjectURL(imageUrl);
+  }
+}
+
 export default function App() {
   const {
     state,
@@ -29,13 +58,7 @@ export default function App() {
 
   const onUpload = useCallback(
     async (file: File) => {
-      let bitmap: ImageBitmap;
-      try {
-        // ImageBitmap upload in WebGL ignores UNPACK_FLIP_Y_WEBGL; request flip at decode time.
-        bitmap = await createImageBitmap(file, { imageOrientation: 'flipY' });
-      } catch {
-        bitmap = await createImageBitmap(file);
-      }
+      const bitmap = await createUploadBitmap(file);
       setImage({
         bitmap,
         width: bitmap.width,
