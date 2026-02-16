@@ -5,6 +5,7 @@ export type ToolKind =
   | 'scale'
   | 'shear'
   | 'rotate'
+  | 'general'
   | 'translate'
   | 'circleInversion'
   | 'define';

@@ -41,7 +41,7 @@ export const IDENTITY_RUNTIME_STEP: RuntimeStep = {
 };
 
 export const CATEGORY_TOOLS: Record<Category, ToolKind[]> = {
-  linear: ['mirror', 'scale', 'shear', 'rotate', 'define'],
+  linear: ['mirror', 'scale', 'shear', 'rotate', 'general', 'define'],
   affine: ['translate', 'define'],
   projective: ['define'],
   mobius: ['define'],
@@ -93,6 +93,10 @@ export function createInitialPayload(toolKind: ToolKind, category: Category): Tr
     return mat2ToLinearData(rotationMatrix(Math.PI / 8));
   }
 
+  if (toolKind === 'general') {
+    return mat2ToLinearData([1, 0, 0, 1]);
+  }
+
   if (toolKind === 'translate') {
     return {
       linear: mat2ToLinearData([1, 0, 0, 1]),
@@ -142,6 +146,8 @@ export function toolLabel(toolKind: ToolKind): string {
       return 'Shear';
     case 'rotate':
       return 'Rotate';
+    case 'general':
+      return 'General';
     case 'translate':
       return 'Translate';
     case 'circleInversion':

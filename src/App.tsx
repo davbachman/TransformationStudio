@@ -29,7 +29,13 @@ export default function App() {
 
   const onUpload = useCallback(
     async (file: File) => {
-      const bitmap = await createImageBitmap(file);
+      let bitmap: ImageBitmap;
+      try {
+        // ImageBitmap upload in WebGL ignores UNPACK_FLIP_Y_WEBGL; request flip at decode time.
+        bitmap = await createImageBitmap(file, { imageOrientation: 'flipY' });
+      } catch {
+        bitmap = await createImageBitmap(file);
+      }
       setImage({
         bitmap,
         width: bitmap.width,

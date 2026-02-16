@@ -543,6 +543,13 @@ input {
   vector-effect: non-scaling-stroke;
 }
 
+.overlay-yellow-fill {
+  fill: rgba(236, 183, 38, 0.95);
+  stroke: rgba(236, 183, 38, 0.95);
+  stroke-width: 0.004;
+  vector-effect: non-scaling-stroke;
+}
+
 .overlay-handle {
   fill: #fff;
   stroke: rgba(205, 33, 33, 0.96);
