@@ -1,73 +1,67 @@
-# React + TypeScript + Vite
+# Transformation Studio
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interactive web app for teaching and exploring geometric transformations on images.
 
-Currently, two official plugins are available:
+## Live App
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+[Open Transformation Studio](https://davbachman.github.io/TransformationStudio/)
 
-## React Compiler
+## What It Does
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Upload an image and transform it on a centered coordinate canvas.
+- Build a transformation stack with:
+  - Linear: Mirror, Scale, Shear, Rotate, Custom
+  - Affine: Translate, Custom
+  - Projective: Custom
+  - Mobius: Custom
+  - Anti-Mobius: Circle Inversion, Custom
+- Edit transforms either graphically (manipulators) or by equation/matrix entries.
+- Reorder or delete transforms in the right sidebar.
+- Toggle transformed square/polar grids.
+- Show/hide intermediate history overlays.
 
-## Expanding the ESLint configuration
+## How To Use
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+1. Click **Upload Image**.
+2. Click a tool in the left sidebar to add a transform.
+3. Use the red/yellow geometry handles on the canvas to adjust it.
+4. Edit numeric values in **Matrix Definition** for precise control.
+5. Reorder transforms by dragging them in the right sidebar.
+6. Click any earlier transform in the stack to edit it.
+7. Toggle **Square Grid**, **Polar Grid**, and **Previous Versions** as needed.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Local Development
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Requirements
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Node.js 20+
+- npm
+
+### Run
+
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open the local URL shown by Vite.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Quality Checks
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run lint
+npm test
+npm run build
 ```
+
+## Deployment (GitHub Pages via Actions)
+
+This repository is configured to deploy automatically from the `main` branch using GitHub Actions.
+
+- Workflow file: `.github/workflows/deploy-pages.yml`
+- Build output: `dist/`
+- Pages base path is set automatically from the repository name during GitHub Actions builds.
+
+After pushing to `main`, GitHub Actions publishes the app to:
+
+- `https://davbachman.github.io/TransformationStudio/`
