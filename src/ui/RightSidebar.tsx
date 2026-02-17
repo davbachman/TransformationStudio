@@ -28,14 +28,14 @@ export function RightSidebar({
   onToggleAllImages,
   onReorder,
 }: RightSidebarProps) {
-  const allVisible = showFirstImage && steps.every((step) => step.isVisible);
+  const allHidden = !showFirstImage && steps.every((step) => !step.isVisible);
 
   return (
     <aside className="right-sidebar">
       <div className="sidebar-title">Transformation Stack</div>
       <div className="stack-visibility-controls">
         <button type="button" className="stack-toggle-btn" onClick={onToggleAllImages}>
-          {allVisible ? 'Hide all' : 'Show all'}
+          {allHidden ? 'Show all' : 'Hide all'}
         </button>
       </div>
       <TransformList

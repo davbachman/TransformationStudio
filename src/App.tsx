@@ -132,9 +132,10 @@ export default function App() {
         onDeleteSource={clearImage}
         onToggleStepVisibility={toggleStepVisibility}
         onToggleSourceVisibility={toggleFirstImage}
-        onToggleAllImages={() =>
-          setAllVisibility(!(state.showFirstImage && state.steps.every((step) => step.isVisible)))
-        }
+        onToggleAllImages={() => {
+          const allHidden = !state.showFirstImage && state.steps.every((step) => !step.isVisible);
+          setAllVisibility(allHidden);
+        }}
         onReorder={reorderSteps}
       />
     </div>
