@@ -586,6 +586,28 @@ input {
   margin-bottom: 8px;
 }
 
+.stack-visibility-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.stack-toggle-btn {
+  border: 1px solid rgba(22, 49, 41, 0.22);
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.stack-toggle-btn:hover {
+  border-color: rgba(29, 127, 115, 0.6);
+}
+
 .transform-list {
   list-style: none;
   margin: 0;
@@ -647,6 +669,12 @@ input {
   gap: 6px;
 }
 
+.transform-card-actions {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.transform-visibility-btn,
 .transform-delete-btn {
   width: 20px;
   min-width: 20px;
@@ -660,6 +688,35 @@ input {
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
+}
+
+.transform-visibility-btn {
+  border-color: rgba(22, 49, 41, 0.28);
+  color: var(--ink-soft);
+}
+
+.transform-visibility-btn svg {
+  width: 13px;
+  height: 13px;
+  display: block;
+  margin: 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.transform-visibility-btn.is-visible {
+  color: rgba(22, 49, 41, 0.95);
+}
+
+.transform-visibility-btn.is-hidden {
+  color: rgba(124, 139, 132, 0.78);
+}
+
+.transform-visibility-btn:hover {
+  border-color: rgba(29, 127, 115, 0.65);
 }
 
 .transform-delete-btn:hover {

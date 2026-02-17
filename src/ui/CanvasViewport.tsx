@@ -8,7 +8,7 @@ interface CanvasViewportProps {
   image: EditorImage | null;
   steps: TransformStep[];
   selectedStep: TransformStep | null;
-  showHistory: boolean;
+  showFirstImage: boolean;
   showSquareGrid: boolean;
   showPolarGrid: boolean;
   onUpdatePayload: (stepId: string, payload: TransformPayload) => void;
@@ -50,7 +50,7 @@ export function CanvasViewport({
   image,
   steps,
   selectedStep,
-  showHistory,
+  showFirstImage,
   showSquareGrid,
   showPolarGrid,
   onUpdatePayload,
@@ -62,7 +62,12 @@ export function CanvasViewport({
   const [rendererError, setRendererError] = useState<string | null>(null);
   const [worldBounds, setWorldBounds] = useState<WorldBounds>(() => computeWorldBounds(1, 1));
 
-  const runtimeSteps = useMemo(() => toRuntimeSteps([...steps].reverse()), [steps]);
+  const chronologicalSteps = useMemo(() => [...steps].reverse(), [steps]);
+  const runtimeSteps = useMemo(() => toRuntimeSteps(chronologicalSteps), [chronologicalSteps]);
+  const visibleSteps = useMemo(
+    () => chronologicalSteps.map((step) => step.isVisible),
+    [chronologicalSteps],
+  );
 
   useEffect(() => {
     if (!canvasRef.current) {
@@ -118,14 +123,15 @@ export function CanvasViewport({
       renderer.render({
         image,
         steps: runtimeSteps,
-        showHistory,
+        showFirstImage,
+        visibleSteps,
         showSquareGrid,
         showPolarGrid,
       });
     });
 
     return () => cancelAnimationFrame(frame);
-  }, [image, resizeTick, runtimeSteps, showHistory, showPolarGrid, showSquareGrid]);
+  }, [image, resizeTick, runtimeSteps, showFirstImage, showPolarGrid, showSquareGrid, visibleSteps]);
 
   return (
     <section ref={containerRef} className="canvas-viewport">

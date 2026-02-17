@@ -34,12 +34,14 @@ type Action =
   | { type: 'ADD_STEP'; toolKind: ToolKind; category: Category }
   | { type: 'SELECT_STEP'; stepId: string }
   | { type: 'DELETE_STEP'; stepId: string }
+  | { type: 'TOGGLE_STEP_VISIBILITY'; stepId: string }
+  | { type: 'SET_ALL_VISIBILITY'; visible: boolean }
   | { type: 'UPDATE_STEP_PAYLOAD'; stepId: string; payload: TransformPayload }
   | { type: 'REORDER_STEPS'; dragId: string; targetId: string }
   | { type: 'SET_IMAGE'; image: EditorImage }
   | { type: 'TOGGLE_SQUARE_GRID' }
   | { type: 'TOGGLE_POLAR_GRID' }
-  | { type: 'TOGGLE_HISTORY' }
+  | { type: 'TOGGLE_FIRST_IMAGE' }
   | { type: 'SET_ACTIVE_CATEGORY'; category: Category }
   | { type: 'CLICK_CATEGORY'; category: Category }
   | { type: 'UNDO' }
@@ -57,7 +59,7 @@ const initialState: EditorState = {
   activeCategory: 'linear',
   showSquareGrid: false,
   showPolarGrid: false,
-  showHistory: true,
+  showFirstImage: true,
 };
 
 let stepCounter = 1;
@@ -175,6 +177,44 @@ function reducePresent(state: EditorState, action: Action): ReduceResult {
       };
     }
 
+    case 'TOGGLE_STEP_VISIBILITY': {
+      const index = state.steps.findIndex((step) => step.id === action.stepId);
+      if (index < 0) {
+        return { next: state, pushHistory: false };
+      }
+
+      const nextSteps = [...state.steps];
+      const step = nextSteps[index];
+      nextSteps[index] = {
+        ...step,
+        isVisible: !step.isVisible,
+      };
+
+      return {
+        next: {
+          ...state,
+          steps: nextSteps,
+        },
+        pushHistory: true,
+      };
+    }
+
+    case 'SET_ALL_VISIBILITY': {
+      const nextSteps = state.steps.map((step) => ({
+        ...step,
+        isVisible: action.visible,
+      }));
+
+      return {
+        next: {
+          ...state,
+          showFirstImage: action.visible,
+          steps: nextSteps,
+        },
+        pushHistory: true,
+      };
+    }
+
     case 'UPDATE_STEP_PAYLOAD': {
       const index = state.steps.findIndex((step) => step.id === action.stepId);
       if (index < 0) {
@@ -248,11 +288,11 @@ function reducePresent(state: EditorState, action: Action): ReduceResult {
       };
     }
 
-    case 'TOGGLE_HISTORY': {
+    case 'TOGGLE_FIRST_IMAGE': {
       return {
         next: {
           ...state,
-          showHistory: !state.showHistory,
+          showFirstImage: !state.showFirstImage,
         },
         pushHistory: true,
       };
@@ -365,12 +405,14 @@ interface EditorStoreValue {
   addTool: (toolKind: ToolKind, category: Category) => void;
   selectStep: (stepId: string) => void;
   deleteStep: (stepId: string) => void;
+  toggleStepVisibility: (stepId: string) => void;
+  setAllVisibility: (visible: boolean) => void;
   updateStepPayload: (stepId: string, payload: TransformPayload) => void;
   reorderSteps: (dragId: string, targetId: string) => void;
   setImage: (image: EditorImage) => void;
   toggleSquareGrid: () => void;
   togglePolarGrid: () => void;
-  toggleHistory: () => void;
+  toggleFirstImage: () => void;
   clickCategory: (category: Category) => void;
   setActiveCategory: (category: Category) => void;
   undo: () => void;
@@ -398,6 +440,14 @@ export function EditorProvider({ children }: PropsWithChildren) {
     dispatch({ type: 'DELETE_STEP', stepId });
   }, []);
 
+  const toggleStepVisibility = useCallback((stepId: string) => {
+    dispatch({ type: 'TOGGLE_STEP_VISIBILITY', stepId });
+  }, []);
+
+  const setAllVisibility = useCallback((visible: boolean) => {
+    dispatch({ type: 'SET_ALL_VISIBILITY', visible });
+  }, []);
+
   const updateStepPayload = useCallback((stepId: string, payload: TransformPayload) => {
     dispatch({ type: 'UPDATE_STEP_PAYLOAD', stepId, payload });
   }, []);
@@ -418,8 +468,8 @@ export function EditorProvider({ children }: PropsWithChildren) {
     dispatch({ type: 'TOGGLE_POLAR_GRID' });
   }, []);
 
-  const toggleHistory = useCallback(() => {
-    dispatch({ type: 'TOGGLE_HISTORY' });
+  const toggleFirstImage = useCallback(() => {
+    dispatch({ type: 'TOGGLE_FIRST_IMAGE' });
   }, []);
 
   const clickCategory = useCallback((category: Category) => {
@@ -446,12 +496,14 @@ export function EditorProvider({ children }: PropsWithChildren) {
       addTool,
       selectStep,
       deleteStep,
+      toggleStepVisibility,
+      setAllVisibility,
       updateStepPayload,
       reorderSteps,
       setImage,
       toggleSquareGrid,
       togglePolarGrid,
-      toggleHistory,
+      toggleFirstImage,
       clickCategory,
       setActiveCategory,
       undo,
@@ -468,10 +520,12 @@ export function EditorProvider({ children }: PropsWithChildren) {
       reorderSteps,
       selectStep,
       setActiveCategory,
+      setAllVisibility,
       setImage,
-      toggleHistory,
+      toggleFirstImage,
       togglePolarGrid,
       toggleSquareGrid,
+      toggleStepVisibility,
       undo,
       updateStepPayload,
     ],

@@ -11,10 +11,10 @@ test('core editor flow', async ({ page }) => {
   await expect(page.getByText('Transformation Studio')).toBeVisible();
 
   await page.getByRole('button', { name: 'Mirror' }).click();
-  await expect(page.locator('.right-sidebar').getByText('Mirror 1')).toBeVisible();
+  await expect(page.locator('.right-sidebar').getByText('Mirror')).toBeVisible();
 
   await page.getByRole('button', { name: 'Rotate' }).click();
-  await expect(page.locator('.right-sidebar').getByText('Rotate 1')).toBeVisible();
+  await expect(page.locator('.right-sidebar').getByText('Rotate')).toBeVisible();
 
   await page.setInputFiles('input[type="file"]', {
     name: 'tiny.png',

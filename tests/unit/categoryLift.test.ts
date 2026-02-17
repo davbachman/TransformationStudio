@@ -12,6 +12,7 @@ describe('category lift behavior', () => {
       payload: { a11: 0, a12: 1, a21: 1, a22: 0 },
       isComplete: false,
       isValid: false,
+      isVisible: true,
     });
 
     const lifted = liftStepToCategory(linearStep, 'affine');
@@ -33,6 +34,7 @@ describe('category lift behavior', () => {
       payload: { a11: 2, a12: 0, a21: 0, a22: 2 },
       isComplete: false,
       isValid: false,
+      isVisible: true,
     });
 
     const lifted = liftStepToCategory(linearStep, 'projective');
@@ -54,6 +56,7 @@ describe('category lift behavior', () => {
       },
       isComplete: false,
       isValid: false,
+      isVisible: true,
     });
 
     const lifted = liftStepToCategory(affineStep, 'projective');
@@ -75,6 +78,7 @@ describe('category lift behavior', () => {
       },
       isComplete: false,
       isValid: false,
+      isVisible: true,
     });
 
     const lifted = liftStepToCategory(affineStep, 'projective');

@@ -6,6 +6,7 @@ interface TransformListProps {
   selectedStepId: string | null;
   onSelect: (stepId: string) => void;
   onDelete: (stepId: string) => void;
+  onToggleVisibility: (stepId: string) => void;
   onReorder: (dragId: string, targetId: string) => void;
 }
 
@@ -22,7 +23,14 @@ function moveIds(ids: string[], dragId: string, targetId: string): string[] {
   return next;
 }
 
-export function TransformList({ steps, selectedStepId, onSelect, onDelete, onReorder }: TransformListProps) {
+export function TransformList({
+  steps,
+  selectedStepId,
+  onSelect,
+  onDelete,
+  onToggleVisibility,
+  onReorder,
+}: TransformListProps) {
   const [pendingDrag, setPendingDrag] = useState<{
     id: string;
     startIndex: number;
@@ -278,7 +286,10 @@ export function TransformList({ steps, selectedStepId, onSelect, onDelete, onReo
               if (dropOrderIds) {
                 return;
               }
-              if ((event.target as HTMLElement).closest('.transform-delete-btn')) {
+              if (
+                (event.target as HTMLElement).closest('.transform-delete-btn') ||
+                (event.target as HTMLElement).closest('.transform-visibility-btn')
+              ) {
                 return;
               }
 
@@ -299,24 +310,57 @@ export function TransformList({ steps, selectedStepId, onSelect, onDelete, onReo
           >
             <div className="transform-head">
               <div className="transform-title">{displayLabel}</div>
-              <button
-                type="button"
-                className="transform-delete-btn"
-                aria-label={`Delete ${step.label}`}
-                draggable={false}
-                onMouseDown={(event) => {
-                  event.stopPropagation();
-                }}
-                onPointerDown={(event) => {
-                  event.stopPropagation();
-                }}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onDelete(step.id);
-                }}
-              >
-                ×
-              </button>
+              <div className="transform-card-actions">
+                <button
+                  type="button"
+                  className={`transform-visibility-btn ${step.isVisible ? 'is-visible' : 'is-hidden'}`}
+                  aria-label={`${step.isVisible ? 'Hide' : 'Show'} ${step.label}`}
+                  draggable={false}
+                  onMouseDown={(event) => {
+                    event.stopPropagation();
+                  }}
+                  onPointerDown={(event) => {
+                    event.stopPropagation();
+                  }}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onToggleVisibility(step.id);
+                  }}
+                >
+                  {step.isVisible ? (
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M1.5 12s3.6-6 10.5-6 10.5 6 10.5 6-3.6 6-10.5 6S1.5 12 1.5 12z" />
+                      <circle cx="12" cy="12" r="3.5" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M1.5 12s3.6-6 10.5-6c2.3 0 4.3.7 6 1.7" />
+                      <path d="M22.5 12s-3.6 6-10.5 6c-2.3 0-4.3-.7-6-1.7" />
+                      <circle cx="12" cy="12" r="3.5" />
+                      <path d="M3 3l18 18" />
+                    </svg>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  className="transform-delete-btn"
+                  aria-label={`Delete ${step.label}`}
+                  draggable={false}
+                  onMouseDown={(event) => {
+                    event.stopPropagation();
+                  }}
+                  onPointerDown={(event) => {
+                    event.stopPropagation();
+                  }}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onDelete(step.id);
+                  }}
+                >
+                  ×
+                </button>
+              </div>
             </div>
             <div className="transform-meta">
               <span className="pill">{step.category}</span>

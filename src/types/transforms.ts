@@ -50,6 +50,7 @@ export interface TransformStep {
   payload: TransformPayload;
   isComplete: boolean;
   isValid: boolean;
+  isVisible: boolean;
 }
 
 export interface EditorImage {
@@ -67,7 +68,7 @@ export interface EditorState {
   activeCategory: Category;
   showSquareGrid: boolean;
   showPolarGrid: boolean;
-  showHistory: boolean;
+  showFirstImage: boolean;
 }
 
 export interface RuntimeStep {

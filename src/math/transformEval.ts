@@ -332,6 +332,7 @@ export function createStep(id: string, label: string, toolKind: ToolKind, catego
     payload,
     isComplete: false,
     isValid: false,
+    isVisible: true,
   });
 }
 

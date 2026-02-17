@@ -6,7 +6,8 @@ import fragmentSource from './shaders/warp.frag.glsl?raw';
 interface RenderOptions {
   image: EditorImage | null;
   steps: RuntimeStep[];
-  showHistory: boolean;
+  showFirstImage: boolean;
+  visibleSteps: boolean[];
   showSquareGrid: boolean;
   showPolarGrid: boolean;
 }
@@ -257,20 +258,29 @@ export class Renderer {
       gl.bindTexture(gl.TEXTURE_2D, this.texture);
 
       if (stepCount === 0) {
-        this.drawStage(0, 1, 0);
+        if (options.showFirstImage) {
+          this.drawStage(0, 1, 0);
+        }
       } else {
-        this.drawStage(0, 0.45, 0);
+        if (options.showFirstImage) {
+          this.drawStage(0, 0.45, 0);
+        }
 
-        if (options.showHistory && stepCount > 1) {
+        if (stepCount > 1) {
           const intermediate = stepCount - 1;
           for (let i = 1; i < stepCount; i += 1) {
+            if (!options.visibleSteps[i - 1]) {
+              continue;
+            }
             const t = intermediate === 0 ? 1 : i / intermediate;
             const alpha = 0.18 + t * (0.72 - 0.18);
             this.drawStage(i, alpha, 0);
           }
         }
 
-        this.drawStage(stepCount, 1, 0);
+        if (options.visibleSteps[stepCount - 1]) {
+          this.drawStage(stepCount, 1, 0);
+        }
       }
     }
 

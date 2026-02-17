@@ -40,12 +40,14 @@ export default function App() {
     addTool,
     selectStep,
     deleteStep,
+    toggleStepVisibility,
+    setAllVisibility,
     updateStepPayload,
     reorderSteps,
     setImage,
     toggleSquareGrid,
     togglePolarGrid,
-    toggleHistory,
+    toggleFirstImage,
     clickCategory,
     undo,
     redo,
@@ -97,10 +99,8 @@ export default function App() {
         onUpload={onUpload}
         showSquareGrid={state.showSquareGrid}
         showPolarGrid={state.showPolarGrid}
-        showHistory={state.showHistory}
         onToggleSquareGrid={toggleSquareGrid}
         onTogglePolarGrid={togglePolarGrid}
-        onToggleHistory={toggleHistory}
       />
 
       <LeftSidebar
@@ -115,7 +115,7 @@ export default function App() {
         image={state.image}
         steps={state.steps}
         selectedStep={selectedStep}
-        showHistory={state.showHistory}
+        showFirstImage={state.showFirstImage}
         showSquareGrid={state.showSquareGrid}
         showPolarGrid={state.showPolarGrid}
         onUpdatePayload={updateStepPayload}
@@ -124,8 +124,14 @@ export default function App() {
       <RightSidebar
         steps={state.steps}
         selectedStepId={state.selectedStepId}
+        showFirstImage={state.showFirstImage}
         onSelect={selectStep}
         onDelete={deleteStep}
+        onToggleStepVisibility={toggleStepVisibility}
+        onToggleFirstImage={toggleFirstImage}
+        onToggleAllImages={() =>
+          setAllVisibility(!(state.showFirstImage && state.steps.every((step) => step.isVisible)))
+        }
         onReorder={reorderSteps}
       />
     </div>

@@ -29,6 +29,7 @@ describe('transformEval', () => {
       payload: { a11: 2, a12: 0, a21: 0, a22: 2 },
       isComplete: false,
       isValid: false,
+      isVisible: true,
     });
 
     const shearStep: TransformStep = normalizeStep({
@@ -39,6 +40,7 @@ describe('transformEval', () => {
       payload: { a11: 1, a12: 0.5, a21: 0, a22: 1 },
       isComplete: false,
       isValid: false,
+      isVisible: true,
     });
 
     const rotateStep: TransformStep = normalizeStep({
@@ -54,6 +56,7 @@ describe('transformEval', () => {
       },
       isComplete: false,
       isValid: false,
+      isVisible: true,
     });
 
     const scaleRuntime = stepToRuntimeInverse(scaleStep);
@@ -90,6 +93,7 @@ describe('transformEval', () => {
       },
       isComplete: false,
       isValid: false,
+      isVisible: true,
     });
 
     const runtime = stepToRuntimeInverse(step);
@@ -113,6 +117,7 @@ describe('transformEval', () => {
       },
       isComplete: false,
       isValid: false,
+      isVisible: true,
     };
 
     const status = deriveStepStatus(invalidStep);
@@ -129,6 +134,7 @@ describe('transformEval', () => {
       payload: { h: [1, 0, null, 0, 1, 0, 0, 0, 1] },
       isComplete: false,
       isValid: false,
+      isVisible: true,
     };
 
     const runtime = stepToRuntimeInverse(normalizeStep(incomplete));
@@ -150,6 +156,7 @@ describe('transformEval', () => {
       },
       isComplete: false,
       isValid: false,
+      isVisible: true,
     };
 
     const normalized = normalizeStep(raw);

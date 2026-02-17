@@ -4,20 +4,16 @@ interface TopToolbarProps {
   onUpload: (file: File) => Promise<void>;
   showSquareGrid: boolean;
   showPolarGrid: boolean;
-  showHistory: boolean;
   onToggleSquareGrid: () => void;
   onTogglePolarGrid: () => void;
-  onToggleHistory: () => void;
 }
 
 export function TopToolbar({
   onUpload,
   showSquareGrid,
   showPolarGrid,
-  showHistory,
   onToggleSquareGrid,
   onTogglePolarGrid,
-  onToggleHistory,
 }: TopToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -66,13 +62,6 @@ export function TopToolbar({
           Polar Grid
         </button>
 
-        <button
-          type="button"
-          className={`btn ${showHistory ? 'is-active' : ''}`}
-          onClick={onToggleHistory}
-        >
-          Previous Versions
-        </button>
       </div>
     </header>
   );
