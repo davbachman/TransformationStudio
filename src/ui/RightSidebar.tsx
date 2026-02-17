@@ -4,11 +4,13 @@ import { TransformList } from './TransformList';
 interface RightSidebarProps {
   steps: TransformStep[];
   selectedStepId: string | null;
+  hasImage: boolean;
   showFirstImage: boolean;
   onSelect: (stepId: string) => void;
   onDelete: (stepId: string) => void;
+  onDeleteSource: () => void;
   onToggleStepVisibility: (stepId: string) => void;
-  onToggleFirstImage: () => void;
+  onToggleSourceVisibility: () => void;
   onToggleAllImages: () => void;
   onReorder: (dragId: string, targetId: string) => void;
 }
@@ -16,11 +18,13 @@ interface RightSidebarProps {
 export function RightSidebar({
   steps,
   selectedStepId,
+  hasImage,
   showFirstImage,
   onSelect,
   onDelete,
+  onDeleteSource,
   onToggleStepVisibility,
-  onToggleFirstImage,
+  onToggleSourceVisibility,
   onToggleAllImages,
   onReorder,
 }: RightSidebarProps) {
@@ -30,9 +34,6 @@ export function RightSidebar({
     <aside className="right-sidebar">
       <div className="sidebar-title">Transformation Stack</div>
       <div className="stack-visibility-controls">
-        <button type="button" className="stack-toggle-btn" onClick={onToggleFirstImage}>
-          {showFirstImage ? 'Hide first' : 'Show first'}
-        </button>
         <button type="button" className="stack-toggle-btn" onClick={onToggleAllImages}>
           {allVisible ? 'Hide all' : 'Show all'}
         </button>
@@ -40,9 +41,13 @@ export function RightSidebar({
       <TransformList
         steps={steps}
         selectedStepId={selectedStepId}
+        hasImage={hasImage}
+        showSourceImage={showFirstImage}
         onSelect={onSelect}
         onDelete={onDelete}
         onToggleVisibility={onToggleStepVisibility}
+        onToggleSourceVisibility={onToggleSourceVisibility}
+        onDeleteSource={onDeleteSource}
         onReorder={onReorder}
       />
     </aside>

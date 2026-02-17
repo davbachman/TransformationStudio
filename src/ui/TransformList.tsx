@@ -4,9 +4,13 @@ import type { TransformStep } from '../types/transforms';
 interface TransformListProps {
   steps: TransformStep[];
   selectedStepId: string | null;
+  hasImage: boolean;
+  showSourceImage: boolean;
   onSelect: (stepId: string) => void;
   onDelete: (stepId: string) => void;
+  onDeleteSource: () => void;
   onToggleVisibility: (stepId: string) => void;
+  onToggleSourceVisibility: () => void;
   onReorder: (dragId: string, targetId: string) => void;
 }
 
@@ -26,9 +30,13 @@ function moveIds(ids: string[], dragId: string, targetId: string): string[] {
 export function TransformList({
   steps,
   selectedStepId,
+  hasImage,
+  showSourceImage,
   onSelect,
   onDelete,
+  onDeleteSource,
   onToggleVisibility,
+  onToggleSourceVisibility,
   onReorder,
 }: TransformListProps) {
   const [pendingDrag, setPendingDrag] = useState<{
@@ -51,7 +59,6 @@ export function TransformList({
   const suppressClickRef = useRef(false);
   const releaseFrameRef = useRef<number | null>(null);
 
-  const empty = useMemo(() => steps.length === 0, [steps.length]);
   const stepIds = useMemo(() => steps.map((step) => step.id), [steps]);
   const stepById = useMemo(() => {
     const map: Record<string, TransformStep> = {};
@@ -234,10 +241,6 @@ export function TransformList({
     };
   }, [activeDrag, distanceBetweenIndices, onReorder, pendingDrag, stepIds, steps]);
 
-  if (empty) {
-    return <p className="stack-placeholder">No transformations yet.</p>;
-  }
-
   return (
     <ul className="transform-list">
       {renderedSteps.map((step) => {
@@ -371,6 +374,53 @@ export function TransformList({
           </li>
         );
       })}
+
+      <li className="transform-item source-item">
+        <div className="transform-head">
+          <div className="transform-title">Source Image</div>
+          <div className="transform-card-actions">
+            <button
+              type="button"
+              className={`transform-visibility-btn ${showSourceImage ? 'is-visible' : 'is-hidden'}`}
+              aria-label={`${showSourceImage ? 'Hide' : 'Show'} Source Image`}
+              disabled={!hasImage}
+              draggable={false}
+              onClick={(event) => {
+                event.stopPropagation();
+                onToggleSourceVisibility();
+              }}
+            >
+              {showSourceImage ? (
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M1.5 12s3.6-6 10.5-6 10.5 6 10.5 6-3.6 6-10.5 6S1.5 12 1.5 12z" />
+                  <circle cx="12" cy="12" r="3.5" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M1.5 12s3.6-6 10.5-6c2.3 0 4.3.7 6 1.7" />
+                  <path d="M22.5 12s-3.6 6-10.5 6c-2.3 0-4.3-.7-6-1.7" />
+                  <circle cx="12" cy="12" r="3.5" />
+                  <path d="M3 3l18 18" />
+                </svg>
+              )}
+            </button>
+
+            <button
+              type="button"
+              className="transform-delete-btn"
+              aria-label="Delete Source Image"
+              disabled={!hasImage}
+              draggable={false}
+              onClick={(event) => {
+                event.stopPropagation();
+                onDeleteSource();
+              }}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      </li>
     </ul>
   );
 }

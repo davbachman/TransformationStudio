@@ -588,7 +588,7 @@ input {
 
 .stack-visibility-controls {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 6px;
   margin-bottom: 8px;
 }
@@ -634,6 +634,11 @@ input {
 
 .transform-item.no-transition {
   transition: none;
+}
+
+.transform-item.source-item {
+  cursor: default;
+  border-style: dashed;
 }
 
 .transform-item.is-selected {
@@ -722,6 +727,12 @@ input {
 .transform-delete-btn:hover {
   border-color: rgba(178, 68, 47, 0.7);
   background: rgba(178, 68, 47, 0.08);
+}
+
+.transform-visibility-btn:disabled,
+.transform-delete-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .transform-meta {

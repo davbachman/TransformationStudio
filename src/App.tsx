@@ -40,6 +40,7 @@ export default function App() {
     addTool,
     selectStep,
     deleteStep,
+    clearImage,
     toggleStepVisibility,
     setAllVisibility,
     updateStepPayload,
@@ -124,11 +125,13 @@ export default function App() {
       <RightSidebar
         steps={state.steps}
         selectedStepId={state.selectedStepId}
+        hasImage={Boolean(state.image)}
         showFirstImage={state.showFirstImage}
         onSelect={selectStep}
         onDelete={deleteStep}
+        onDeleteSource={clearImage}
         onToggleStepVisibility={toggleStepVisibility}
-        onToggleFirstImage={toggleFirstImage}
+        onToggleSourceVisibility={toggleFirstImage}
         onToggleAllImages={() =>
           setAllVisibility(!(state.showFirstImage && state.steps.every((step) => step.isVisible)))
         }

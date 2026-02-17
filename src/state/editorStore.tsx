@@ -34,6 +34,7 @@ type Action =
   | { type: 'ADD_STEP'; toolKind: ToolKind; category: Category }
   | { type: 'SELECT_STEP'; stepId: string }
   | { type: 'DELETE_STEP'; stepId: string }
+  | { type: 'CLEAR_IMAGE' }
   | { type: 'TOGGLE_STEP_VISIBILITY'; stepId: string }
   | { type: 'SET_ALL_VISIBILITY'; visible: boolean }
   | { type: 'UPDATE_STEP_PAYLOAD'; stepId: string; payload: TransformPayload }
@@ -172,6 +173,20 @@ function reducePresent(state: EditorState, action: Action): ReduceResult {
           steps: nextSteps,
           selectedStepId: nextSelected,
           activeCategory: selectedStep ? selectedStep.category : state.activeCategory,
+        },
+        pushHistory: true,
+      };
+    }
+
+    case 'CLEAR_IMAGE': {
+      if (!state.image) {
+        return { next: state, pushHistory: false };
+      }
+
+      return {
+        next: {
+          ...state,
+          image: null,
         },
         pushHistory: true,
       };
@@ -405,6 +420,7 @@ interface EditorStoreValue {
   addTool: (toolKind: ToolKind, category: Category) => void;
   selectStep: (stepId: string) => void;
   deleteStep: (stepId: string) => void;
+  clearImage: () => void;
   toggleStepVisibility: (stepId: string) => void;
   setAllVisibility: (visible: boolean) => void;
   updateStepPayload: (stepId: string, payload: TransformPayload) => void;
@@ -438,6 +454,10 @@ export function EditorProvider({ children }: PropsWithChildren) {
 
   const deleteStep = useCallback((stepId: string) => {
     dispatch({ type: 'DELETE_STEP', stepId });
+  }, []);
+
+  const clearImage = useCallback(() => {
+    dispatch({ type: 'CLEAR_IMAGE' });
   }, []);
 
   const toggleStepVisibility = useCallback((stepId: string) => {
@@ -496,6 +516,7 @@ export function EditorProvider({ children }: PropsWithChildren) {
       addTool,
       selectStep,
       deleteStep,
+      clearImage,
       toggleStepVisibility,
       setAllVisibility,
       updateStepPayload,
@@ -512,6 +533,7 @@ export function EditorProvider({ children }: PropsWithChildren) {
     [
       addTool,
       clickCategory,
+      clearImage,
       deleteStep,
       history.future.length,
       history.past.length,
