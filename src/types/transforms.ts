@@ -53,7 +53,10 @@ export interface TransformStep {
   isVisible: boolean;
 }
 
-export interface EditorImage {
+export type SourceKind = 'upload' | 'camera';
+
+export interface UploadSource {
+  kind: 'upload';
   bitmap: ImageBitmap;
   width: number;
   height: number;
@@ -61,14 +64,29 @@ export interface EditorImage {
   name: string;
 }
 
+export interface CameraSource {
+  kind: 'camera';
+  video: HTMLVideoElement;
+  stream: MediaStream;
+  width: number;
+  height: number;
+  textureReady: boolean;
+  name: string;
+  mirrorPreview: boolean;
+}
+
+export type EditorSource = UploadSource | CameraSource;
+
 export interface EditorState {
-  image: EditorImage | null;
+  source: EditorSource | null;
   steps: TransformStep[];
   selectedStepId: string | null;
   activeCategory: Category;
   showSquareGrid: boolean;
   showPolarGrid: boolean;
   showFirstImage: boolean;
+  cameraStatus: 'idle' | 'starting' | 'live' | 'error';
+  cameraError: string | null;
 }
 
 export interface RuntimeStep {

@@ -4,7 +4,8 @@ import { TransformList } from './TransformList';
 interface RightSidebarProps {
   steps: TransformStep[];
   selectedStepId: string | null;
-  hasImage: boolean;
+  hasSource: boolean;
+  sourceLabel: string;
   showFirstImage: boolean;
   onSelect: (stepId: string) => void;
   onDelete: (stepId: string) => void;
@@ -18,7 +19,8 @@ interface RightSidebarProps {
 export function RightSidebar({
   steps,
   selectedStepId,
-  hasImage,
+  hasSource,
+  sourceLabel,
   showFirstImage,
   onSelect,
   onDelete,
@@ -41,7 +43,8 @@ export function RightSidebar({
       <TransformList
         steps={steps}
         selectedStepId={selectedStepId}
-        hasImage={hasImage}
+        hasSource={hasSource}
+        sourceLabel={sourceLabel}
         showSourceImage={showFirstImage}
         onSelect={onSelect}
         onDelete={onDelete}

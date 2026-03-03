@@ -2,16 +2,22 @@ import { useRef, useState } from 'react';
 
 interface TopToolbarProps {
   onUpload: (file: File) => Promise<void>;
+  cameraStatus: 'idle' | 'starting' | 'live' | 'error';
+  cameraError: string | null;
   showSquareGrid: boolean;
   showPolarGrid: boolean;
+  onToggleCamera: () => void;
   onToggleSquareGrid: () => void;
   onTogglePolarGrid: () => void;
 }
 
 export function TopToolbar({
   onUpload,
+  cameraStatus,
+  cameraError,
   showSquareGrid,
   showPolarGrid,
+  onToggleCamera,
   onToggleSquareGrid,
   onTogglePolarGrid,
 }: TopToolbarProps) {
@@ -45,6 +51,14 @@ export function TopToolbar({
           <button type="button" className="btn" onClick={triggerUpload}>
             Upload Image
           </button>
+          <button
+            type="button"
+            className={`btn ${cameraStatus === 'live' ? 'is-active' : ''}`}
+            disabled={cameraStatus === 'starting'}
+            onClick={onToggleCamera}
+          >
+            {cameraStatus === 'live' || cameraStatus === 'starting' ? 'Stop Camera' : 'Use Camera'}
+          </button>
           <input
             ref={fileInputRef}
             type="file"
@@ -68,6 +82,8 @@ export function TopToolbar({
           >
             Polar Grid
           </button>
+
+          {cameraError && <div className="camera-error-inline">{cameraError}</div>}
         </div>
       </header>
 

@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { LeftSidebar } from './ui/LeftSidebar';
 import { TopToolbar } from './ui/TopToolbar';
 import { RightSidebar } from './ui/RightSidebar';
 import { CanvasViewport } from './ui/CanvasViewport';
 import { useEditorStore } from './state/editorStore';
+import type { CameraSource, UploadSource } from './types/transforms';
 
 async function createUploadBitmap(file: File): Promise<ImageBitmap> {
   const imageUrl = URL.createObjectURL(file);
@@ -34,18 +35,76 @@ async function createUploadBitmap(file: File): Promise<ImageBitmap> {
   }
 }
 
+function stopStreamTracks(stream: MediaStream | null | undefined) {
+  if (!stream) {
+    return;
+  }
+  stream.getTracks().forEach((track) => track.stop());
+}
+
+async function waitForVideoMetadata(video: HTMLVideoElement): Promise<void> {
+  if (video.videoWidth > 0 && video.videoHeight > 0) {
+    return;
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      cleanup();
+      reject(new Error('Timed out waiting for camera metadata.'));
+    }, 3000);
+
+    const onLoaded = () => {
+      cleanup();
+      resolve();
+    };
+
+    const onError = () => {
+      cleanup();
+      reject(new Error('Unable to read camera metadata.'));
+    };
+
+    const cleanup = () => {
+      window.clearTimeout(timeout);
+      video.removeEventListener('loadedmetadata', onLoaded);
+      video.removeEventListener('error', onError);
+    };
+
+    video.addEventListener('loadedmetadata', onLoaded);
+    video.addEventListener('error', onError);
+  });
+}
+
+function formatCameraError(error: unknown): string {
+  if (error instanceof DOMException) {
+    if (error.name === 'NotAllowedError') {
+      return 'Camera permission denied.';
+    }
+    if (error.name === 'NotFoundError') {
+      return 'No camera found on this device.';
+    }
+    if (error.name === 'NotReadableError') {
+      return 'Camera is busy or not readable.';
+    }
+  }
+  return 'Unable to start camera.';
+}
+
 export default function App() {
   const {
     state,
     addTool,
     selectStep,
     deleteStep,
-    clearImage,
+    clearSource,
     toggleStepVisibility,
     setAllVisibility,
     updateStepPayload,
     reorderSteps,
-    setImage,
+    setSource,
+    setCameraStarting,
+    setCameraLive,
+    setCameraError,
+    stopCameraState,
     toggleSquareGrid,
     togglePolarGrid,
     toggleFirstImage,
@@ -53,6 +112,8 @@ export default function App() {
     undo,
     redo,
   } = useEditorStore();
+  const suppressEndedRef = useRef(false);
+  const cameraRequestIdRef = useRef(0);
 
   const selectedStep = useMemo(
     () => state.steps.find((step) => step.id === state.selectedStepId) ?? null,
@@ -61,17 +122,133 @@ export default function App() {
 
   const onUpload = useCallback(
     async (file: File) => {
+      cameraRequestIdRef.current += 1;
+      if (state.source?.kind === 'camera') {
+        suppressEndedRef.current = true;
+        stopStreamTracks(state.source.stream);
+        window.setTimeout(() => {
+          suppressEndedRef.current = false;
+        }, 0);
+      }
+
       const bitmap = await createUploadBitmap(file);
-      setImage({
+      const source: UploadSource = {
+        kind: 'upload',
         bitmap,
         width: bitmap.width,
         height: bitmap.height,
         textureReady: true,
         name: file.name,
-      });
+      };
+      setSource(source);
     },
-    [setImage],
+    [setSource, state.source],
   );
+
+  const handleCameraEnded = useCallback(() => {
+    if (suppressEndedRef.current) {
+      return;
+    }
+    stopCameraState();
+    setCameraError('Camera stopped.');
+  }, [setCameraError, stopCameraState]);
+
+  const startCamera = useCallback(async () => {
+    const requestId = cameraRequestIdRef.current + 1;
+    cameraRequestIdRef.current = requestId;
+
+    if (!window.isSecureContext) {
+      setCameraError('Camera requires HTTPS or localhost.');
+      return;
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setCameraError('Camera API is unavailable in this browser.');
+      return;
+    }
+
+    setCameraStarting();
+
+    let stream: MediaStream | null = null;
+    try {
+      if (state.source?.kind === 'camera') {
+        suppressEndedRef.current = true;
+        stopStreamTracks(state.source.stream);
+        window.setTimeout(() => {
+          suppressEndedRef.current = false;
+        }, 0);
+      }
+
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user' },
+        audio: false,
+      });
+
+      if (requestId !== cameraRequestIdRef.current) {
+        stopStreamTracks(stream);
+        return;
+      }
+
+      const video = document.createElement('video');
+      video.autoplay = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.srcObject = stream;
+
+      await video.play();
+      await waitForVideoMetadata(video);
+
+      if (requestId !== cameraRequestIdRef.current) {
+        stopStreamTracks(stream);
+        return;
+      }
+
+      const cameraSource: CameraSource = {
+        kind: 'camera',
+        video,
+        stream,
+        width: video.videoWidth || 640,
+        height: video.videoHeight || 480,
+        textureReady: true,
+        name: 'Live Camera',
+        mirrorPreview: true,
+      };
+
+      stream.getVideoTracks().forEach((track) => {
+        track.addEventListener('ended', handleCameraEnded, { once: true });
+      });
+
+      setSource(cameraSource);
+      setCameraLive();
+    } catch (error) {
+      stopStreamTracks(stream);
+      setCameraError(formatCameraError(error));
+    }
+  }, [handleCameraEnded, setCameraError, setCameraLive, setCameraStarting, setSource, state.source]);
+
+  const stopCamera = useCallback(() => {
+    cameraRequestIdRef.current += 1;
+    if (state.source?.kind === 'camera') {
+      suppressEndedRef.current = true;
+      stopStreamTracks(state.source.stream);
+      window.setTimeout(() => {
+        suppressEndedRef.current = false;
+      }, 0);
+    }
+
+    clearSource();
+    stopCameraState();
+  }, [clearSource, state.source, stopCameraState]);
+
+  useEffect(() => {
+    return () => {
+      cameraRequestIdRef.current += 1;
+      if (state.source?.kind === 'camera') {
+        suppressEndedRef.current = true;
+        stopStreamTracks(state.source.stream);
+      }
+    };
+  }, [state.source]);
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -98,8 +275,17 @@ export default function App() {
     <div className="app-shell">
       <TopToolbar
         onUpload={onUpload}
+        cameraStatus={state.cameraStatus}
+        cameraError={state.cameraError}
         showSquareGrid={state.showSquareGrid}
         showPolarGrid={state.showPolarGrid}
+        onToggleCamera={() => {
+          if (state.cameraStatus === 'live' || state.cameraStatus === 'starting') {
+            stopCamera();
+            return;
+          }
+          void startCamera();
+        }}
         onToggleSquareGrid={toggleSquareGrid}
         onTogglePolarGrid={togglePolarGrid}
       />
@@ -113,7 +299,7 @@ export default function App() {
       />
 
       <CanvasViewport
-        image={state.image}
+        source={state.source}
         steps={state.steps}
         selectedStep={selectedStep}
         showFirstImage={state.showFirstImage}
@@ -125,11 +311,12 @@ export default function App() {
       <RightSidebar
         steps={state.steps}
         selectedStepId={state.selectedStepId}
-        hasImage={Boolean(state.image)}
+        hasSource={Boolean(state.source)}
+        sourceLabel={state.source?.kind === 'camera' ? 'Source Camera' : 'Source Image'}
         showFirstImage={state.showFirstImage}
         onSelect={selectStep}
         onDelete={deleteStep}
-        onDeleteSource={clearImage}
+        onDeleteSource={stopCamera}
         onToggleStepVisibility={toggleStepVisibility}
         onToggleSourceVisibility={toggleFirstImage}
         onToggleAllImages={() => {

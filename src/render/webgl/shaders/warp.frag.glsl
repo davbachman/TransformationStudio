@@ -16,6 +16,7 @@ uniform vec4 u_data2[MAX_STEPS];
 uniform vec4 u_data3[MAX_STEPS];
 uniform int u_mode;
 uniform float u_alpha;
+uniform int u_mirrorX;
 
 in vec2 v_uv;
 out vec4 outColor;
@@ -175,6 +176,10 @@ void main() {
       source.x / (2.0 * u_imageHalf.x) + 0.5,
       0.5 - source.y / (2.0 * u_imageHalf.y)
     );
+
+    if (u_mirrorX == 1) {
+      uv.x = 1.0 - uv.x;
+    }
 
     if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
       outColor = vec4(0.0);

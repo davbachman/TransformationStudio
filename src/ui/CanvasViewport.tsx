@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toRuntimeSteps } from '../math/transformEval';
 import { Renderer } from '../render/webgl/Renderer';
-import type { EditorImage, TransformPayload, TransformStep } from '../types/transforms';
+import type { EditorSource, TransformPayload, TransformStep } from '../types/transforms';
 import { ManipulatorOverlay } from './ManipulatorOverlay';
 
 interface CanvasViewportProps {
-  image: EditorImage | null;
+  source: EditorSource | null;
   steps: TransformStep[];
   selectedStep: TransformStep | null;
   showFirstImage: boolean;
@@ -47,7 +47,7 @@ function computeWorldBounds(width: number, height: number): WorldBounds {
 }
 
 export function CanvasViewport({
-  image,
+  source,
   steps,
   selectedStep,
   showFirstImage,
@@ -119,9 +119,27 @@ export function CanvasViewport({
       return;
     }
 
+    if (source?.kind === 'camera') {
+      let raf = 0;
+      const tick = () => {
+        renderer.render({
+          source,
+          steps: runtimeSteps,
+          showFirstImage,
+          visibleSteps,
+          showSquareGrid,
+          showPolarGrid,
+        });
+        raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+
+      return () => cancelAnimationFrame(raf);
+    }
+
     const frame = requestAnimationFrame(() => {
       renderer.render({
-        image,
+        source,
         steps: runtimeSteps,
         showFirstImage,
         visibleSteps,
@@ -131,7 +149,7 @@ export function CanvasViewport({
     });
 
     return () => cancelAnimationFrame(frame);
-  }, [image, resizeTick, runtimeSteps, showFirstImage, showPolarGrid, showSquareGrid, visibleSteps]);
+  }, [resizeTick, runtimeSteps, showFirstImage, showPolarGrid, showSquareGrid, source, visibleSteps]);
 
   return (
     <section ref={containerRef} className="canvas-viewport">
@@ -149,9 +167,9 @@ export function CanvasViewport({
         </div>
       )}
 
-      {!rendererError && !image && (
+      {!rendererError && !source && (
         <div className="canvas-placeholder">
-          <p>Upload an image to start experimenting with transformations.</p>
+          <p>Upload an image or use camera to start experimenting with transformations.</p>
         </div>
       )}
     </section>

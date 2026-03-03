@@ -1,10 +1,10 @@
-import type { EditorImage, RuntimeStep } from '../../types/transforms';
+import type { EditorSource, RuntimeStep } from '../../types/transforms';
 import { MAX_STEPS } from '../../types/transforms';
 import vertexSource from './shaders/warp.vert.glsl?raw';
 import fragmentSource from './shaders/warp.frag.glsl?raw';
 
 interface RenderOptions {
-  image: EditorImage | null;
+  source: EditorSource | null;
   steps: RuntimeStep[];
   showFirstImage: boolean;
   visibleSteps: boolean[];
@@ -24,6 +24,7 @@ interface Uniforms {
   data3: WebGLUniformLocation;
   mode: WebGLUniformLocation;
   alpha: WebGLUniformLocation;
+  mirrorX: WebGLUniformLocation;
 }
 
 function compileShader(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader {
@@ -148,9 +149,11 @@ export class Renderer {
       data3: requireLocation(gl, this.program, 'u_data3[0]'),
       mode: requireLocation(gl, this.program, 'u_mode'),
       alpha: requireLocation(gl, this.program, 'u_alpha'),
+      mirrorX: requireLocation(gl, this.program, 'u_mirrorX'),
     };
 
     gl.uniform1i(this.uniforms.image, 0);
+    gl.uniform1i(this.uniforms.mirrorX, 0);
     gl.enable(gl.BLEND);
     gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   }
@@ -166,13 +169,12 @@ export class Renderer {
     }
   }
 
-  private updateTexture(image: EditorImage | null) {
-    if (!image || this.lastBitmap === image.bitmap) {
+  private updateTexture(source: EditorSource | null) {
+    if (!source) {
       return;
     }
 
     const gl = this.gl;
-    this.lastBitmap = image.bitmap;
 
     if (!this.texture) {
       this.texture = gl.createTexture();
@@ -188,13 +190,28 @@ export class Renderer {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    // Fragment shader already handles y-axis orientation for world->texture mapping.
-    // Flipping again during upload inverts imported images.
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image.bitmap);
+
+    if (source.kind === 'upload') {
+      if (this.lastBitmap !== source.bitmap) {
+        this.lastBitmap = source.bitmap;
+        // Fragment shader already handles y-axis orientation for world->texture mapping.
+        // Flipping again during upload inverts imported images.
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source.bitmap);
+      }
+    } else {
+      this.lastBitmap = null;
+      if (source.video.readyState < 2) {
+        return;
+      }
+      // Video/HTML media sources are top-left origin; flip at upload so shader-space y-up mapping
+      // matches uploaded-image behavior.
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source.video);
+    }
 
     const maxHalf = 0.82;
-    const aspect = image.width / image.height;
+    const aspect = source.width / source.height;
     if (aspect >= 1) {
       this.imageHalf = [maxHalf, maxHalf / aspect];
     } else {
@@ -238,7 +255,7 @@ export class Renderer {
     this.ensureCanvasSize();
     gl.viewport(0, 0, this.canvas.width, this.canvas.height);
 
-    this.updateTexture(options.image);
+    this.updateTexture(options.source);
 
     gl.useProgram(this.program);
     gl.bindVertexArray(this.vao);
@@ -253,7 +270,10 @@ export class Renderer {
     const stepCount = steps.length;
     this.uploadStepUniforms(steps);
 
-    if (this.texture && options.image) {
+    const mirrorX = options.source?.kind === 'camera' && options.source.mirrorPreview;
+    gl.uniform1i(this.uniforms.mirrorX, mirrorX ? 1 : 0);
+
+    if (this.texture && options.source) {
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, this.texture);
 
