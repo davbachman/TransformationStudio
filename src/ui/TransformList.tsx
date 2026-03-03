@@ -4,7 +4,8 @@ import type { TransformStep } from '../types/transforms';
 interface TransformListProps {
   steps: TransformStep[];
   selectedStepId: string | null;
-  hasImage: boolean;
+  hasSource: boolean;
+  sourceLabel: string;
   showSourceImage: boolean;
   onSelect: (stepId: string) => void;
   onDelete: (stepId: string) => void;
@@ -30,7 +31,8 @@ function moveIds(ids: string[], dragId: string, targetId: string): string[] {
 export function TransformList({
   steps,
   selectedStepId,
-  hasImage,
+  hasSource,
+  sourceLabel,
   showSourceImage,
   onSelect,
   onDelete,
@@ -377,13 +379,13 @@ export function TransformList({
 
       <li className="transform-item source-item">
         <div className="transform-head">
-          <div className="transform-title">Source Image</div>
+          <div className="transform-title">{sourceLabel}</div>
           <div className="transform-card-actions">
             <button
               type="button"
               className={`transform-visibility-btn ${showSourceImage ? 'is-visible' : 'is-hidden'}`}
-              aria-label={`${showSourceImage ? 'Hide' : 'Show'} Source Image`}
-              disabled={!hasImage}
+              aria-label={`${showSourceImage ? 'Hide' : 'Show'} ${sourceLabel}`}
+              disabled={!hasSource}
               draggable={false}
               onClick={(event) => {
                 event.stopPropagation();
@@ -408,8 +410,8 @@ export function TransformList({
             <button
               type="button"
               className="transform-delete-btn"
-              aria-label="Delete Source Image"
-              disabled={!hasImage}
+              aria-label={`Delete ${sourceLabel}`}
+              disabled={!hasSource}
               draggable={false}
               onClick={(event) => {
                 event.stopPropagation();

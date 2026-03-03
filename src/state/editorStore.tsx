@@ -9,7 +9,7 @@ import {
 } from 'react';
 import type {
   Category,
-  EditorImage,
+  EditorSource,
   EditorState,
   ToolKind,
   TransformPayload,
@@ -34,12 +34,16 @@ type Action =
   | { type: 'ADD_STEP'; toolKind: ToolKind; category: Category }
   | { type: 'SELECT_STEP'; stepId: string }
   | { type: 'DELETE_STEP'; stepId: string }
-  | { type: 'CLEAR_IMAGE' }
+  | { type: 'CLEAR_SOURCE' }
   | { type: 'TOGGLE_STEP_VISIBILITY'; stepId: string }
   | { type: 'SET_ALL_VISIBILITY'; visible: boolean }
   | { type: 'UPDATE_STEP_PAYLOAD'; stepId: string; payload: TransformPayload }
   | { type: 'REORDER_STEPS'; dragId: string; targetId: string }
-  | { type: 'SET_IMAGE'; image: EditorImage }
+  | { type: 'SET_SOURCE'; source: EditorSource }
+  | { type: 'START_CAMERA_REQUEST' }
+  | { type: 'START_CAMERA_SUCCESS' }
+  | { type: 'START_CAMERA_ERROR'; message: string }
+  | { type: 'STOP_CAMERA' }
   | { type: 'TOGGLE_SQUARE_GRID' }
   | { type: 'TOGGLE_POLAR_GRID' }
   | { type: 'TOGGLE_FIRST_IMAGE' }
@@ -54,13 +58,15 @@ interface ReduceResult {
 }
 
 const initialState: EditorState = {
-  image: null,
+  source: null,
   steps: [],
   selectedStepId: null,
   activeCategory: 'linear',
   showSquareGrid: false,
   showPolarGrid: false,
   showFirstImage: true,
+  cameraStatus: 'idle',
+  cameraError: null,
 };
 
 let stepCounter = 1;
@@ -72,9 +78,27 @@ function generateStepId(): string {
 }
 
 function cloneState(state: EditorState): EditorState {
+  let source: EditorSource | null = null;
+  let cameraStatus = state.cameraStatus;
+  let cameraError = state.cameraError;
+
+  if (state.source) {
+    if (state.source.kind === 'upload') {
+      source = { ...state.source };
+    } else {
+      // Camera streams/video elements are not history-safe. Undoing into a camera state
+      // should prompt user to restart camera rather than restoring dead stream objects.
+      source = null;
+      cameraStatus = 'error';
+      cameraError = 'Restart camera to continue live source.';
+    }
+  }
+
   return {
     ...state,
-    image: state.image ? { ...state.image } : null,
+    source,
+    cameraStatus,
+    cameraError,
     steps: state.steps.map((step) => ({
       ...step,
       payload: clonePayload(step.payload),
@@ -178,15 +202,17 @@ function reducePresent(state: EditorState, action: Action): ReduceResult {
       };
     }
 
-    case 'CLEAR_IMAGE': {
-      if (!state.image) {
+    case 'CLEAR_SOURCE': {
+      if (!state.source) {
         return { next: state, pushHistory: false };
       }
 
       return {
         next: {
           ...state,
-          image: null,
+          source: null,
+          cameraStatus: 'idle',
+          cameraError: null,
         },
         pushHistory: true,
       };
@@ -273,13 +299,60 @@ function reducePresent(state: EditorState, action: Action): ReduceResult {
       };
     }
 
-    case 'SET_IMAGE': {
+    case 'SET_SOURCE': {
       return {
         next: {
           ...state,
-          image: action.image,
+          source: action.source,
+          cameraStatus: action.source.kind === 'camera' ? 'live' : 'idle',
+          cameraError: null,
         },
         pushHistory: true,
+      };
+    }
+
+    case 'START_CAMERA_REQUEST': {
+      return {
+        next: {
+          ...state,
+          cameraStatus: 'starting',
+          cameraError: null,
+        },
+        pushHistory: false,
+      };
+    }
+
+    case 'START_CAMERA_SUCCESS': {
+      return {
+        next: {
+          ...state,
+          cameraStatus: 'live',
+          cameraError: null,
+        },
+        pushHistory: false,
+      };
+    }
+
+    case 'START_CAMERA_ERROR': {
+      return {
+        next: {
+          ...state,
+          cameraStatus: 'error',
+          cameraError: action.message,
+        },
+        pushHistory: false,
+      };
+    }
+
+    case 'STOP_CAMERA': {
+      return {
+        next: {
+          ...state,
+          source: state.source?.kind === 'camera' ? null : state.source,
+          cameraStatus: 'idle',
+          cameraError: null,
+        },
+        pushHistory: false,
       };
     }
 
@@ -420,12 +493,16 @@ interface EditorStoreValue {
   addTool: (toolKind: ToolKind, category: Category) => void;
   selectStep: (stepId: string) => void;
   deleteStep: (stepId: string) => void;
-  clearImage: () => void;
+  clearSource: () => void;
   toggleStepVisibility: (stepId: string) => void;
   setAllVisibility: (visible: boolean) => void;
   updateStepPayload: (stepId: string, payload: TransformPayload) => void;
   reorderSteps: (dragId: string, targetId: string) => void;
-  setImage: (image: EditorImage) => void;
+  setSource: (source: EditorSource) => void;
+  setCameraStarting: () => void;
+  setCameraLive: () => void;
+  setCameraError: (message: string) => void;
+  stopCameraState: () => void;
   toggleSquareGrid: () => void;
   togglePolarGrid: () => void;
   toggleFirstImage: () => void;
@@ -456,8 +533,8 @@ export function EditorProvider({ children }: PropsWithChildren) {
     dispatch({ type: 'DELETE_STEP', stepId });
   }, []);
 
-  const clearImage = useCallback(() => {
-    dispatch({ type: 'CLEAR_IMAGE' });
+  const clearSource = useCallback(() => {
+    dispatch({ type: 'CLEAR_SOURCE' });
   }, []);
 
   const toggleStepVisibility = useCallback((stepId: string) => {
@@ -476,8 +553,24 @@ export function EditorProvider({ children }: PropsWithChildren) {
     dispatch({ type: 'REORDER_STEPS', dragId, targetId });
   }, []);
 
-  const setImage = useCallback((image: EditorImage) => {
-    dispatch({ type: 'SET_IMAGE', image });
+  const setSource = useCallback((source: EditorSource) => {
+    dispatch({ type: 'SET_SOURCE', source });
+  }, []);
+
+  const setCameraStarting = useCallback(() => {
+    dispatch({ type: 'START_CAMERA_REQUEST' });
+  }, []);
+
+  const setCameraLive = useCallback(() => {
+    dispatch({ type: 'START_CAMERA_SUCCESS' });
+  }, []);
+
+  const setCameraError = useCallback((message: string) => {
+    dispatch({ type: 'START_CAMERA_ERROR', message });
+  }, []);
+
+  const stopCameraState = useCallback(() => {
+    dispatch({ type: 'STOP_CAMERA' });
   }, []);
 
   const toggleSquareGrid = useCallback(() => {
@@ -516,12 +609,16 @@ export function EditorProvider({ children }: PropsWithChildren) {
       addTool,
       selectStep,
       deleteStep,
-      clearImage,
+      clearSource,
       toggleStepVisibility,
       setAllVisibility,
       updateStepPayload,
       reorderSteps,
-      setImage,
+      setSource,
+      setCameraStarting,
+      setCameraLive,
+      setCameraError,
+      stopCameraState,
       toggleSquareGrid,
       togglePolarGrid,
       toggleFirstImage,
@@ -533,7 +630,7 @@ export function EditorProvider({ children }: PropsWithChildren) {
     [
       addTool,
       clickCategory,
-      clearImage,
+      clearSource,
       deleteStep,
       history.future.length,
       history.past.length,
@@ -543,7 +640,11 @@ export function EditorProvider({ children }: PropsWithChildren) {
       selectStep,
       setActiveCategory,
       setAllVisibility,
-      setImage,
+      setCameraError,
+      setCameraLive,
+      setCameraStarting,
+      setSource,
+      stopCameraState,
       toggleFirstImage,
       togglePolarGrid,
       toggleSquareGrid,
