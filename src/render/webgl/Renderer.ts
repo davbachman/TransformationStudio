@@ -204,7 +204,9 @@ export class Renderer {
       if (source.video.readyState < 2) {
         return;
       }
-      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+      // Video/HTML media sources are top-left origin; flip at upload so shader-space y-up mapping
+      // matches uploaded-image behavior.
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source.video);
     }
 
