@@ -4,7 +4,7 @@ Interactive web app for teaching and exploring geometric transformations on imag
 
 Created by David Bachman with GPT-5 Codex
 
-To learn more about David Bachman and his work visit https://pzacad.pitzer.edu/~dbachman/ and subscribe to his AI substack *Entropy Bonus* at profbachman.substack.com
+To learn more about David Bachman and his work visit https://pzacad.pitzer.edu/~dbachman/ and subscribe to his AI substack *Entropy Bonus* at https://profbachman.substack.com
 
 ## Live App
 
